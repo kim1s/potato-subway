@@ -1,0 +1,40 @@
+services:
+  mongo:
+    image: mongodb/mongodb-community-server:8.0-ubi9
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+
+  server:
+    build: ./server
+    restart: unless-stopped
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    ports:
+      - "5050:5050"
+    environment:
+      PORT: 5050
+      MONGODB_URI: mongodb://mongo:27017/project-potato
+      CONTENT_UPLOAD_SECRET: ${CONTENT_UPLOAD_SECRET:-dev-secret}
+      IP_HASH_SALT: ${IP_HASH_SALT:-dev-salt}
+    depends_on:
+      - mongo
+
+  client:
+    build: ./client/project-potato-react
+    restart: unless-stopped
+    volumes:
+      - ./client/project-potato-react:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_PROXY_TARGET: http://server:5050
+    depends_on:
+      - server
+
+volumes:
+  mongo_data:
