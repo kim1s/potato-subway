@@ -74,13 +74,13 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  margin: 0.5rem 0 1rem;
 }
 
-.hero-art__img {
+.hero-art svg {
   display: block;
-  width: min(100%, 17.5rem);
+  width: min(100%, 14rem);
   height: auto;
-  object-fit: contain;
 }
 
 .main {

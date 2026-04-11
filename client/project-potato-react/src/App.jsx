@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPost, fetchPostsByWordId, fetchWordByDate } from "./api.js";
+import PotatoHero from "./PotatoHero.jsx";
 
 function localDateKey(d = new Date()) {
   const y = d.getFullYear();
@@ -36,7 +37,7 @@ function formatCommentTime(iso) {
 }
 
 export default function App() {
-  const [date, setDate] = useState(() => localDateKey());
+  const [date, setDate] = useState(() => "2026-04-13"); // TODO: 테스트용 고정값, 실서비스 전 localDateKey()로 되돌리기
   const [word, setWord] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -156,14 +157,7 @@ export default function App() {
             />
           </label>
           <div className="hero-art">
-            <img
-              src="/hero-potato.png"
-              alt=""
-              className="hero-art__img"
-              width={280}
-              height={200}
-              decoding="async"
-            />
+            <PotatoHero />
           </div>
         </header>
 
