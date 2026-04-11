@@ -20,6 +20,8 @@ services:
       MONGODB_URI: mongodb://mongo:27017/project-potato
       CONTENT_UPLOAD_SECRET: ${CONTENT_UPLOAD_SECRET:-dev-secret}
       IP_HASH_SALT: ${IP_HASH_SALT:-dev-salt}
+      NOTION_TOKEN: ${NOTION_TOKEN:-}
+      NOTION_DATABASE_URL: ${NOTION_DATABASE_URL:-}
     depends_on:
       - mongo
 

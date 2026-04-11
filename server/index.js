@@ -6,6 +6,7 @@ import "./models/index.js";
 import contentsPublicRouter from "./routes/contentsPublic.js";
 import contentsRouter from "./routes/contents.js";
 import postsRouter from "./routes/posts.js";
+import adminRouter from "./routes/admin.js";
 
 /** macOS는 5000번을 AirPlay가 쓰는 경우가 많아 기본값을 피합니다. */
 const PORT = Number(process.env.PORT) || 5050;
@@ -34,6 +35,7 @@ app.get("/", (req, res) => {
 app.use("/api/contents", requireDb, contentsPublicRouter);
 app.use("/api/contents", requireDb, contentsRouter);
 app.use("/api/posts", requireDb, postsRouter);
+app.use("/api/admin", requireDb, adminRouter);
 
 async function main() {
   await new Promise((resolve, reject) => {

@@ -1,0 +1,12 @@
+# 환경변수 (credentials 포함)
+.env
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# 의존성
+node_modules/

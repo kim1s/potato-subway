@@ -17,15 +17,15 @@ function formatHeaderDate(isoDate) {
   return `${isoDate} (${w})`;
 }
 
+/** 첫 글자만 대문자, 나머지는 원문 그대로 유지 */
 function displayWord(w) {
   if (!w || typeof w !== "string") return "";
-  return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  return w.charAt(0).toUpperCase() + w.slice(1);
 }
 
-/** 목업: 영어만 허용 (아포스트로피 등 포함) */
-function isEnglishOnly(s) {
-  if (!s.trim()) return false;
-  return /^[A-Za-z0-9\s.,!?'"();:_-]+$/.test(s);
+/** 한글 포함 여부 검사 — 한글이 있으면 true */
+function hasKorean(s) {
+  return /[\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F\uA960-\uA97F\uD7B0-\uD7FF]/.test(s);
 }
 
 function formatCommentTime(iso) {
@@ -36,11 +36,26 @@ function formatCommentTime(iso) {
   });
 }
 
+/**
+ * 히어로 이미지 목록 — 어드민에서 등록한 이미지 URL을 여기에 추가한다.
+ * 비어 있으면 SVG 캐릭터를 폴백으로 사용한다.
+ * 예: ["/hero/img1.jpg", "/hero/img2.jpg", "/hero/img3.jpg"]
+ */
+const HERO_IMAGES = [];
+
 export default function App() {
-  const [date, setDate] = useState(() => "2026-04-13"); // TODO: 테스트용 고정값, 실서비스 전 localDateKey()로 되돌리기
+  const [date, setDate] = useState(() => localDateKey());
   const [word, setWord] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [noContent, setNoContent] = useState(false);
   const [error, setError] = useState(null);
+
+  /** 히어로 이미지: 마운트 시 랜덤 pick, 이미지가 없으면 SVG 사용 */
+  const [heroSrc] = useState(() =>
+    HERO_IMAGES.length > 0
+      ? HERO_IMAGES[Math.floor(Math.random() * HERO_IMAGES.length)]
+      : null
+  );
 
   const [exampleIndex, setExampleIndex] = useState(0);
 
@@ -54,12 +69,17 @@ export default function App() {
   const load = useCallback(async (publishDate) => {
     setLoading(true);
     setError(null);
+    setNoContent(false);
     setWord(null);
     try {
       const data = await fetchWordByDate(publishDate);
       setWord(data);
     } catch (e) {
-      setError(e.message || "Something went wrong.");
+      if (e.status === 404) {
+        setNoContent(true);
+      } else {
+        setError(e.message || "Something went wrong.");
+      }
     } finally {
       setLoading(false);
     }
@@ -123,8 +143,8 @@ export default function App() {
     const id = word?._id;
     const text = commentText.trim();
     if (!id || !text || submitting) return;
-    if (!isEnglishOnly(text)) {
-      setFormError("Please write in English only.");
+    if (hasKorean(text)) {
+      setFormError("한글은 입력할 수 없어요. Please write in English.");
       return;
     }
     setFormError(null);
@@ -156,23 +176,41 @@ export default function App() {
               aria-label="Choose date"
             />
           </label>
+
+          {/* 히어로 이미지: HERO_IMAGES 등록 시 랜덤 이미지, 없으면 SVG 캐릭터 */}
           <div className="hero-art">
-            <PotatoHero />
+            {heroSrc ? (
+              <img src={heroSrc} className="hero-art__img" alt="" decoding="async" />
+            ) : (
+              <PotatoHero />
+            )}
           </div>
         </header>
 
         <main className="main">
           {loading && <p className="state-msg">Loading…</p>}
+
+          {/* 서버/네트워크 에러 */}
           {!loading && error && (
             <div className="panel panel--notice" role="status">
               <p className="state-msg state-msg--error">{error}</p>
-              <p className="hint">
-                Start the API (default port 5050) and add content for this date.
-              </p>
             </div>
           )}
 
-          {!loading && !error && word && (
+          {/* 해당 날짜에 단어 없음 (404) — 준비 중 이미지 자리 */}
+          {!loading && noContent && (
+            <div className="no-content" role="status">
+              <div className="no-content__art">
+                {/* TODO: 어드민에서 "준비 중" 이미지 등록 후 <img> 로 교체 */}
+                <PotatoHero />
+              </div>
+              <p className="no-content__msg">오늘의 단어를 준비 중이에요.</p>
+              <p className="no-content__sub">Come back tomorrow!</p>
+            </div>
+          )}
+
+          {/* 단어 정상 로드 */}
+          {!loading && !error && !noContent && word && (
             <>
               <section className="block" aria-labelledby="today-word-label">
                 <p id="today-word-label" className="eyebrow">
