@@ -80,10 +80,8 @@ body {
 .hero-art svg,
 .hero-art__img {
   display: block;
-  width: min(100%, 14rem);
+  width: auto;
   height: auto;
-  max-height: 12rem;
-  object-fit: contain;
 }
 
 .main {
