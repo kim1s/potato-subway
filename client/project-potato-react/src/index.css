@@ -77,10 +77,13 @@ body {
   margin: 0.5rem 0 1rem;
 }
 
-.hero-art svg {
+.hero-art svg,
+.hero-art__img {
   display: block;
   width: min(100%, 14rem);
   height: auto;
+  max-height: 12rem;
+  object-fit: contain;
 }
 
 .main {

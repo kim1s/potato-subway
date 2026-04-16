@@ -36,26 +36,12 @@ function formatCommentTime(iso) {
   });
 }
 
-/**
- * 히어로 이미지 목록 — 어드민에서 등록한 이미지 URL을 여기에 추가한다.
- * 비어 있으면 SVG 캐릭터를 폴백으로 사용한다.
- * 예: ["/hero/img1.jpg", "/hero/img2.jpg", "/hero/img3.jpg"]
- */
-const HERO_IMAGES = [];
-
 export default function App() {
   const [date, setDate] = useState(() => localDateKey());
   const [word, setWord] = useState(null);
   const [loading, setLoading] = useState(true);
   const [noContent, setNoContent] = useState(false);
   const [error, setError] = useState(null);
-
-  /** 히어로 이미지: 마운트 시 랜덤 pick, 이미지가 없으면 SVG 사용 */
-  const [heroSrc] = useState(() =>
-    HERO_IMAGES.length > 0
-      ? HERO_IMAGES[Math.floor(Math.random() * HERO_IMAGES.length)]
-      : null
-  );
 
   const [exampleIndex, setExampleIndex] = useState(0);
 
@@ -65,6 +51,9 @@ export default function App() {
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
+
+  /** 히어로 이미지: noContent 상태에 따라 weekday 또는 weekend 이미지 표시 */
+  const heroSrc = noContent ? "/heroes/hero_weekend.png" : "/heroes/hero_weekday.png";
 
   const load = useCallback(async (publishDate) => {
     setLoading(true);
@@ -177,13 +166,9 @@ export default function App() {
             />
           </label>
 
-          {/* 히어로 이미지: HERO_IMAGES 등록 시 랜덤 이미지, 없으면 SVG 캐릭터 */}
+          {/* 히어로 이미지: weekday/weekend 상태에 따라 표시 */}
           <div className="hero-art">
-            {heroSrc ? (
-              <img src={heroSrc} className="hero-art__img" alt="" decoding="async" />
-            ) : (
-              <PotatoHero />
-            )}
+            <img src={heroSrc} className="hero-art__img" alt="" decoding="async" />
           </div>
         </header>
 
