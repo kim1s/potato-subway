@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 interface Example { en: string; ko: string }
 interface Word {
@@ -165,6 +166,7 @@ export default function HomePage() {
 
   return (
     <div className="app">
+      <LoadingScreen visible={loading} />
       <div className="app-inner">
 
         <header className="app-header">
@@ -180,7 +182,6 @@ export default function HomePage() {
           )}
         </header>
 
-        {loading && <p className="loading-text">Loading…</p>}
         {!loading && error && <div className="error-box"><p>{error}</p></div>}
 
         {!loading && noContent && (
