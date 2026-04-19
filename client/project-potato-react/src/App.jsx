@@ -49,6 +49,7 @@ export default function App() {
   const [postsError, setPostsError] = useState(null);
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState(null);
 
   const load = useCallback(async (publishDate) => {
@@ -113,9 +114,9 @@ export default function App() {
     touchStartX.current = null;
     if (Math.abs(delta) < 40) return;
     if (delta < 0) {
-      goToExample((exampleIndex + 1) % examples.length, "left");
+      goToExample(Math.min(exampleIndex + 1, examples.length - 1), "left");
     } else {
-      goToExample((exampleIndex - 1 + examples.length) % examples.length, "right");
+      goToExample(Math.max(exampleIndex - 1, 0), "right");
     }
   }
 
@@ -138,6 +139,8 @@ export default function App() {
     try {
       await createPost(id, text);
       setCommentText("");
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 2000);
       const { posts: list } = await fetchPostsByWordId(id);
       setPosts(list ?? []);
     } catch (err) {
@@ -163,7 +166,7 @@ export default function App() {
               aria-label="Choose date"
             />
           </label>
-          {!noContent && (
+          {!noContent && !loading && !error && (
             <div className="app-hero">
               <img src="/heroes/hero_weekday.png" alt="" decoding="async" />
             </div>
@@ -183,7 +186,7 @@ export default function App() {
         {!loading && noContent && (
           <div className="weekend-content">
             <p className="weekend-message">{"Why are you here?\nIt's the weekend. Go rest."}</p>
-            <div className="app-hero">
+            <div className="weekend-hero">
               <img src="/heroes/hero_weekend.png" alt="" decoding="async" />
             </div>
           </div>
@@ -193,7 +196,9 @@ export default function App() {
           <main className="main-content">
 
             <section className="section">
-              <p className="section-label">Today&apos;s word</p>
+              <div className="section-label-row">
+                <p className="section-label">Today&apos;s word</p>
+              </div>
               <div className="card">
                 <h2 className="word-text">{displayWord(word.word)}</h2>
                 <p className="word-meaning">{word.meaning?.ko}</p>
@@ -201,20 +206,22 @@ export default function App() {
             </section>
 
             <section className="section">
-              <p className="section-label">How it&apos;s used</p>
-              {canRefreshExample && (
-                <div className="dots">
-                  {examples.map((_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      className={`dot${i === exampleIndex ? " dot--active" : ""}`}
-                      onClick={() => goToExample(i, i > exampleIndex ? "left" : "right")}
-                      aria-label={`Example ${i + 1}`}
-                    />
-                  ))}
-                </div>
-              )}
+              <div className="section-label-row">
+                <p className="section-label">How it&apos;s used</p>
+                {canRefreshExample && (
+                  <div className="dots">
+                    {examples.map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className={`dot${i === exampleIndex ? " dot--active" : ""}`}
+                        onClick={() => goToExample(i, i > exampleIndex ? "left" : "right")}
+                        aria-label={`Example ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
               <div
                 className="card card--examples"
                 onTouchStart={handleTouchStart}
@@ -234,14 +241,16 @@ export default function App() {
             </section>
 
             <section className="section">
-              <p className="section-label">Leave a note</p>
+              <div className="section-label-row">
+                <p className="section-label">Leave a note</p>
+              </div>
               <form className="note-form" onSubmit={handleCommentSubmit}>
                 <div className="note-input-row">
                   <input
                     type="text"
                     className="note-input"
-                    maxLength={2000}
-                    placeholder="Write anything with today's word. (English only)"
+                    maxLength={80}
+                    placeholder="Try today's word"
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                     disabled={submitting}
@@ -250,12 +259,15 @@ export default function App() {
                   />
                   <button
                     type="submit"
-                    className="note-submit"
+                    className={`note-submit${submitted ? " note-submit--dropped" : ""}`}
                     disabled={submitting || !commentText.trim()}
                   >
-                    {submitting ? "…" : "Drop It"}
+                    {submitted ? "Dropped ✓" : "Drop It"}
                   </button>
                 </div>
+                {commentText.length > 0 && (
+                  <p className="note-char-count">{commentText.length}/80</p>
+                )}
                 {formError && <p className="form-error">{formError}</p>}
               </form>
 
@@ -267,7 +279,7 @@ export default function App() {
                   <p className="comment-error">{postsError}</p>
                 )}
                 {!postsLoading && !postsError && sortedPosts.length === 0 && (
-                  <p className="comment-empty">No potatoes yet. Drop the first line.</p>
+                  <p className="comment-empty">Be the first to drop a note.</p>
                 )}
                 {!postsLoading && !postsError && sortedPosts.length > 0 && (
                   <ul className="comment-list">
@@ -286,6 +298,10 @@ export default function App() {
 
           </main>
         )}
+
+        <footer className="app-footer">
+          <p>Potato on the Subway · Every weekday morning</p>
+        </footer>
 
       </div>
     </div>

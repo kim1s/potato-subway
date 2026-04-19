@@ -44,8 +44,8 @@ html {
 body {
   margin: 0;
   min-height: 100dvh;
-  font-family: var(--font-sans);
-  background-color: var(--background);
+  font-family: 'DM Sans', var(--font-sans), sans-serif;
+  background-color: #f0f0ee;
   color: var(--foreground);
   line-height: 1.5;
   font-size: 16px;
