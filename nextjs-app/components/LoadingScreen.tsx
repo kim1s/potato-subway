@@ -21,9 +21,12 @@ export function LoadingScreen({ visible }: { visible: boolean }) {
 
   useEffect(() => {
     if (!visible) {
-      setExiting(true);
-      const t = setTimeout(() => setHidden(true), 700);
-      return () => clearTimeout(t);
+      const sleep = setTimeout(() => {
+        setExiting(true);
+        const fade = setTimeout(() => setHidden(true), 700);
+        return () => clearTimeout(fade);
+      }, 1300);
+      return () => clearTimeout(sleep);
     }
   }, [visible]);
 
