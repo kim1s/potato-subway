@@ -25,14 +25,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "가져올 데이터가 없어요.", upserted: 0 });
   }
 
-  // month별 현재 최대 order 조회
-  const existing = await sql<{ month_key: string; max_order: number }[]>`
-    SELECT month_key, MAX("order") as max_order
-    FROM contents
-    GROUP BY month_key
-  `;
-  const monthOrderMap = new Map(existing.map((r) => [r.month_key, r.max_order]));
+  await sql`TRUNCATE TABLE contents RESTART IDENTITY CASCADE`;
 
+  const monthOrderMap = new Map<string, number>();
   const toInsert = rows.map((row) => {
     const next = (monthOrderMap.get(row.monthKey) ?? 0) + 1;
     monthOrderMap.set(row.monthKey, next);
@@ -40,7 +35,7 @@ export async function POST(request: NextRequest) {
       word: row.word,
       meaning_ko: row.meaning.ko,
       meaning_en: row.meaning.en,
-      examples: JSON.stringify(row.examples),
+      examples: sql.json(row.examples),
       publish_date: row.publishDate,
       month_key: row.monthKey,
       order: next,
@@ -48,18 +43,7 @@ export async function POST(request: NextRequest) {
     };
   });
 
-  const result = await sql`
-    INSERT INTO contents (word, meaning_ko, meaning_en, examples, publish_date, month_key, "order", is_active)
-    SELECT * FROM ${sql(toInsert)}
-    ON CONFLICT (month_key, "order") DO UPDATE SET
-      word = EXCLUDED.word,
-      meaning_ko = EXCLUDED.meaning_ko,
-      meaning_en = EXCLUDED.meaning_en,
-      examples = EXCLUDED.examples,
-      publish_date = EXCLUDED.publish_date,
-      updated_at = now()
-    RETURNING id
-  `;
+  const result = await sql`INSERT INTO contents ${sql(toInsert)} RETURNING id`;
 
   return NextResponse.json({ message: "임포트 완료!", upserted: result.length });
 }

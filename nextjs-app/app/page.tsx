@@ -63,7 +63,7 @@ async function createPost(wordId: string, content: string): Promise<void> {
 }
 
 export default function HomePage() {
-  const [date, setDate] = useState(() => localDateKey());
+  const [date] = useState(() => localDateKey());
   const [word, setWord] = useState<Word | null>(null);
   const [loading, setLoading] = useState(true);
   const [noContent, setNoContent] = useState(false);
@@ -171,10 +171,9 @@ export default function HomePage() {
 
         <header className="app-header">
           <h1 className="app-title">Potato on the Subway</h1>
-          <label className="app-date-label">
+          <div className="app-date-label">
             <span>{formatHeaderDate(date)}</span>
-            <input type="date" className="app-date-input" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Choose date" />
-          </label>
+          </div>
           {!noContent && !loading && !error && (
             <div className="app-hero">
               <img src="/heroes/hero_weekday.png" alt="" decoding="async" />
