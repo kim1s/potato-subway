@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Potato on the Subway",
+    "slug": "potato-subway",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "potato-subway",
+    "icon": "./assets/heroes/hero_weekday.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/heroes/hero_weekday.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f0f0ee"
+    },
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/heroes/hero_weekday.png",
+        "backgroundColor": "#f0f0ee"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
