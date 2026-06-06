@@ -29,6 +29,12 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "805d1e96-80e2-419b-b5d7-af84610219dc"
+      }
+    },
+    "owner": "kim1s"
   }
 }
