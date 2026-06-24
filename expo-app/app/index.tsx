@@ -10,14 +10,17 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { LoadingScreen } from "../src/components/LoadingScreen";
 import { DatePickerModal } from "../src/components/DatePickerModal";
+import { ReportModal } from "../src/components/ReportModal";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
-import type { Example, Post, Word } from "../src/api/client";
-import { createPost, fetchPostsByWordId, fetchWordByDate } from "../src/api/client";
+import type { Example, Post, ReportReason, Word } from "../src/api/client";
+import { createPost, fetchPostsByWordId, fetchWordByDate, reportPost } from "../src/api/client";
 import { formatCommentTime, formatHeaderDate, localDateKey } from "../src/utils/date";
+import { logCommentFocus, logCommentSubmit, logCommentReport, logExampleSwipe, logCalendarDateSelect } from "../src/analytics";
 
 function displayWord(w: string) {
   return w ? w.charAt(0).toUpperCase() + w.slice(1) : "";
@@ -53,6 +56,8 @@ export default function HomePage() {
   const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [calendarVisible, setCalendarVisible] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [reportTarget, setReportTarget] = useState<Post | null>(null);
 
   const flatListRef = useRef<FlatList>(null);
   const noteInputRef = useRef<TextInput>(null);
@@ -103,9 +108,29 @@ export default function HomePage() {
 
   const swipeGesture = Gesture.Pan().runOnJS(true).onEnd((e) => {
     if (Math.abs(e.velocityX) < 200) return;
-    if (e.velocityX < 0 && exampleIndex < examples.length - 1) setExampleIndex((i) => i + 1);
-    else if (e.velocityX > 0 && exampleIndex > 0) setExampleIndex((i) => i - 1);
+    if (e.velocityX < 0 && exampleIndex < examples.length - 1) {
+      const next = exampleIndex + 1;
+      setExampleIndex(next);
+      logExampleSwipe("left", next);
+    } else if (e.velocityX > 0 && exampleIndex > 0) {
+      const next = exampleIndex - 1;
+      setExampleIndex(next);
+      logExampleSwipe("right", next);
+    }
   });
+
+  async function handleReportSubmit(reason: ReportReason) {
+    const post = reportTarget;
+    if (!post) return;
+    setReportTarget(null);
+    setPosts((prev) => prev.filter((p) => p.id !== post.id));
+    setToastVisible(true);
+    setTimeout(() => setToastVisible(false), 3000);
+    try {
+      await reportPost(post.id, reason);
+      if (word) logCommentReport(word.word);
+    } catch { /* already removed locally, ignore */ }
+  }
 
   async function handleSubmit() {
     if (!word || !commentText.trim()) return;
@@ -117,6 +142,7 @@ export default function HomePage() {
       setCommentText("");
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 2000);
+      logCommentSubmit(word.word);
     } catch (e: unknown) {
       setFormError((e as Error).message ?? "Failed to post");
     } finally {
@@ -242,6 +268,7 @@ export default function HomePage() {
                         multiline
                         scrollEnabled={false}
                         onFocus={() => {
+                          logCommentFocus();
                           setTimeout(() => {
                             flatListRef.current?.scrollToOffset({
                               offset: noteSectionOffsetY.current - 16,
@@ -286,7 +313,12 @@ export default function HomePage() {
           renderItem={({ item, index }) => (
             <View style={[s.commentItem, index === sortedPosts.length - 1 && s.commentItemLast]}>
               <Text style={s.commentText}>{item.content}</Text>
-              <Text style={s.commentTime}>{formatCommentTime(item.created_at)}</Text>
+              <View style={s.commentMeta}>
+                <Text style={s.commentTime}>{formatCommentTime(item.created_at)}</Text>
+                <Pressable onPress={() => setReportTarget(item)} hitSlop={8}>
+                  <Feather name="flag" size={13} color={LIGHT} />
+                </Pressable>
+              </View>
             </View>
           )}
           ListFooterComponent={
@@ -297,12 +329,24 @@ export default function HomePage() {
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
+    {toastVisible && (
+      <View style={s.toast} pointerEvents="none">
+        <View style={s.toastPill}>
+          <Text style={s.toastText}>Report submitted</Text>
+        </View>
+      </View>
+    )}
     <LoadingScreen visible={loading} />
     <DatePickerModal
       visible={calendarVisible}
       onClose={() => setCalendarVisible(false)}
-      onSelect={(d) => { load(d); flatListRef.current?.scrollToOffset({ offset: 0, animated: false }); }}
+      onSelect={(d) => { load(d); flatListRef.current?.scrollToOffset({ offset: 0, animated: false }); logCalendarDateSelect(d); }}
       today={date}
+    />
+    <ReportModal
+      visible={!!reportTarget}
+      onClose={() => setReportTarget(null)}
+      onSubmit={handleReportSubmit}
     />
     </>
   );
@@ -372,9 +416,15 @@ const s = StyleSheet.create({
   commentItem: { backgroundColor: CARD, flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12, paddingVertical: 14, paddingHorizontal: 16, marginHorizontal: 20, borderBottomWidth: 1, borderBottomColor: BG },
   commentItemLast: { borderBottomWidth: 0 },
   commentText: { flex: 1, fontSize: 13, color: "#333", lineHeight: 20 },
-  commentTime: { fontSize: 11, color: LIGHT, flexShrink: 0, marginTop: 2 },
+  commentMeta: { flexShrink: 0, flexDirection: "row", alignItems: "center", gap: 8, marginTop: 2 },
+  commentTime: { fontSize: 11, color: LIGHT },
 
   // Footer
   footer: { marginTop: 40, paddingVertical: 24, paddingHorizontal: 20, alignItems: "center", borderTopWidth: 1, borderTopColor: BORDER },
+
+  // Toast
+  toast: { position: "absolute", bottom: 32, left: 24, right: 24, alignItems: "center" },
+  toastPill: { backgroundColor: "rgba(17,17,17,0.92)", borderRadius: 999, paddingVertical: 12, paddingHorizontal: 20 },
+  toastText: { color: "#fff", fontSize: 13, textAlign: "center" },
   footerText: { fontSize: 11, color: "#ccc" },
 });

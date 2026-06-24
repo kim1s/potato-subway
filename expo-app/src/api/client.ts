@@ -56,3 +56,13 @@ export function createPost(wordId: string, content: string): Promise<Post> {
     body: JSON.stringify({ wordId, content }),
   });
 }
+
+export type ReportReason = "spam" | "abuse" | "sexual" | "other";
+
+export async function reportPost(postId: string, reason: ReportReason): Promise<void> {
+  await request(`/api/posts/${postId}/report`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reason }),
+  });
+}

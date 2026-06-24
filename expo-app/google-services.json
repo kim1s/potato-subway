@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "71802842636",
+    "project_id": "potato-59f39",
+    "storage_bucket": "potato-59f39.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:71802842636:android:0a9c6944e2db88ca60c829",
+        "android_client_info": {
+          "package_name": "com.potatosubway.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_Wn_a0sdHit_wbBq6cDRwiqXe9hlHWtE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

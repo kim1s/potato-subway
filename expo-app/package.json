@@ -3,10 +3,15 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
-    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@amplitude/analytics-react-native": "^1.5.57",
+    "@expo/vector-icons": "^15.0.2",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-firebase/analytics": "^24.1.1",
+    "@react-native-firebase/app": "^24.1.1",
     "@react-native-masked-view/masked-view": "0.3.2",
     "expo": "~56.0.9",
     "expo-constants": "^56.0.17",
+    "expo-dev-client": "^56.0.20",
     "expo-linear-gradient": "~56.0.4",
     "expo-linking": "^56.0.13",
     "expo-router": "^56.2.9",
@@ -27,8 +32,8 @@
   },
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web"
   },
   "private": true

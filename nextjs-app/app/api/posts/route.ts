@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const rows = await sql`
     SELECT id, word_id, content, likes, created_at
     FROM posts
-    WHERE word_id = ${wordId}
+    WHERE word_id = ${wordId} AND is_hidden = false
     ORDER BY created_at DESC
   `;
 
