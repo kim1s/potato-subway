@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
@@ -301,6 +302,11 @@ export default function HomePage() {
 
         <footer className="app-footer">
           <p>Potato on the Subway · Every weekday morning</p>
+          <p className="app-footer-links">
+            <Link href="/privacy">Privacy Policy</Link>
+            <span> · </span>
+            <Link href="/terms">Terms of Use</Link>
+          </p>
         </footer>
 
       </div>
