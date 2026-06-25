@@ -130,8 +130,8 @@ export default function PrivacyPage() {
             <p>
               개인정보와 관련한 문의나 삭제 요청은 아래 이메일로 연락해 주세요.
               <br />
-              <a href="mailto:khs971013@gmail.com" className="font-medium text-stone-900 underline">
-                khs971013@gmail.com
+              <a href="mailto:studio.doosle@gmail.com" className="font-medium text-stone-900 underline">
+                studio.doosle@gmail.com
               </a>
             </p>
           </Section>
