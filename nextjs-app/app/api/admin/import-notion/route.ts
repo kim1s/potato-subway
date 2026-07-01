@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "notionUrl이 필요해요." }, { status: 400 });
   }
 
-  // Notion fetch와 DB existing 조회를 병렬로 실행
   let rows;
   try {
     rows = await fetchNotionRows(notionUrl, token);
@@ -28,6 +27,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "가져올 데이터가 없어요.", upserted: 0 });
   }
 
+  // publish_date 기준으로 정렬 후 월별 순서 번호 결정 (랜덤 API 응답 순서에 의존하지 않음)
+  rows.sort((a, b) => a.publishDate.localeCompare(b.publishDate));
   const monthOrderMap = new Map<string, number>();
   const newRows = rows.map((row) => {
     const next = (monthOrderMap.get(row.monthKey) ?? 0) + 1;
@@ -44,89 +45,84 @@ export async function POST(request: NextRequest) {
     };
   });
 
+  const notionDates = newRows.map((r) => r.publish_date);
+
   let count: number;
   try {
-  count = await sql.begin(async (sql) => {
-    const newDates = newRows.map((r) => r.publish_date);
+    count = await sql.begin(async (sql) => {
+      // 1. 기존 row 조회
+      const existing = await sql`
+        SELECT id, TO_CHAR(publish_date, 'YYYY-MM-DD') AS publish_date
+        FROM contents
+      `;
+      const existingMap = new Map(existing.map((r) => [r.publish_date as string, r.id as string]));
 
-    // 1) 노션에서 사라진 날짜 삭제 + 기존 row 조회 (병렬)
-    const [, existing] = await Promise.all([
-      sql`DELETE FROM contents WHERE NOT (TO_CHAR(publish_date, 'YYYY-MM-DD') = ANY(${newDates}::text[]))`,
-      sql`SELECT id, TO_CHAR(publish_date, 'YYYY-MM-DD') AS publish_date FROM contents`,
-    ]);
-
-    const existingMap = new Map(existing.map((r) => [r.publish_date as string, r.id as string]));
-
-    const toUpdate: Array<typeof newRows[number] & { id: string }> = [];
-    const toInsert: typeof newRows = [];
-
-    for (const row of newRows) {
-      const existingId = existingMap.get(row.publish_date);
-      if (existingId) toUpdate.push({ ...row, id: existingId });
-      else toInsert.push(row);
-    }
-
-    // 2) 고아 row 정리: toUpdate에 없는 row가 남아있으면 삭제 (posts 없는 것만)
-    if (toUpdate.length > 0) {
+      // 2. 노션에 없어진 날짜 삭제 (posts는 CASCADE로 함께 삭제됨)
       await sql`
         DELETE FROM contents
-        WHERE id NOT IN (
-          SELECT word_id FROM posts WHERE word_id IS NOT NULL
-        )
-        AND id != ANY(${toUpdate.map((r) => r.id)})
-      `;
-    }
-
-    // 3) 단일 unnest UPDATE (UNIQUE 충돌 방지: month_key를 먼저 임시값으로)
-    if (toUpdate.length > 0) {
-      // month_key를 행 고유 임시값으로 설정해 (month_key, order) unique 충돌 회피
-      await sql`
-        UPDATE contents SET month_key = 'tmp-' || id::text
-        WHERE id = ANY(${toUpdate.map((r) => r.id)})
+        WHERE NOT (TO_CHAR(publish_date, 'YYYY-MM-DD') = ANY(${notionDates}::text[]))
       `;
 
-      // 실제 값으로 한번에 업데이트 (unnest로 N쿼리 → 1쿼리)
-      await sql`
-        UPDATE contents SET
-          word       = v.word,
-          meaning_ko = v.meaning_ko,
-          meaning_en = v.meaning_en,
-          examples   = v.examples::jsonb,
-          month_key  = v.month_key,
-          "order"    = v.ord::int,
-          is_active  = (v.is_active = 'true'),
-          updated_at = now()
-        FROM unnest(
-          ${toUpdate.map((r) => r.id)}::uuid[],
-          ${toUpdate.map((r) => r.word)}::text[],
-          ${toUpdate.map((r) => r.meaning_ko ?? '')}::text[],
-          ${toUpdate.map((r) => r.meaning_en ?? '')}::text[],
-          ${toUpdate.map((r) => JSON.stringify(r.examples))}::text[],
-          ${toUpdate.map((r) => r.month_key)}::text[],
-          ${toUpdate.map((r) => r.order)}::int[],
-          ${toUpdate.map((r) => (r.is_active ? 'true' : 'false'))}::text[]
-        ) AS v(id, word, meaning_ko, meaning_en, examples, month_key, ord, is_active)
-        WHERE contents.id = v.id
-      `;
-    }
+      // 3. 업데이트 / 신규 삽입 분류
+      const toUpdate: Array<typeof newRows[number] & { id: string }> = [];
+      const toInsert: typeof newRows = [];
 
-    // 4) 신규 row INSERT
-    if (toInsert.length > 0) {
-      const insertData = toInsert.map((r) => ({
-        word: r.word,
-        meaning_ko: r.meaning_ko,
-        meaning_en: r.meaning_en,
-        examples: sql.json(r.examples),
-        publish_date: r.publish_date,
-        month_key: r.month_key,
-        order: r.order,
-        is_active: r.is_active,
-      }));
-      await sql`INSERT INTO contents ${sql(insertData)}`;
-    }
+      for (const row of newRows) {
+        const id = existingMap.get(row.publish_date);
+        if (id) toUpdate.push({ ...row, id });
+        else toInsert.push(row);
+      }
 
-    return toUpdate.length + toInsert.length;
-  });
+      // 4. 기존 row 업데이트
+      // month_key를 먼저 임시값으로 변경해 UNIQUE(month_key, order) 충돌 방지
+      if (toUpdate.length > 0) {
+        await sql`
+          UPDATE contents SET month_key = 'tmp-' || id::text
+          WHERE id = ANY(${toUpdate.map((r) => r.id)}::uuid[])
+        `;
+        await sql`
+          UPDATE contents SET
+            word       = v.word,
+            meaning_ko = v.meaning_ko,
+            meaning_en = v.meaning_en,
+            examples   = v.examples::jsonb,
+            month_key  = v.month_key,
+            "order"    = v.ord::int,
+            is_active  = true,
+            updated_at = now()
+          FROM unnest(
+            ${toUpdate.map((r) => r.id)}::uuid[],
+            ${toUpdate.map((r) => r.word)}::text[],
+            ${toUpdate.map((r) => r.meaning_ko ?? "")}::text[],
+            ${toUpdate.map((r) => r.meaning_en ?? "")}::text[],
+            ${toUpdate.map((r) => JSON.stringify(r.examples))}::text[],
+            ${toUpdate.map((r) => r.month_key)}::text[],
+            ${toUpdate.map((r) => r.order)}::int[]
+          ) AS v(id, word, meaning_ko, meaning_en, examples, month_key, ord)
+          WHERE contents.id = v.id
+        `;
+      }
+
+      // 5. 신규 row 삽입
+      if (toInsert.length > 0) {
+        await sql`
+          INSERT INTO contents ${sql(
+            toInsert.map((r) => ({
+              word: r.word,
+              meaning_ko: r.meaning_ko,
+              meaning_en: r.meaning_en,
+              examples: sql.json(r.examples),
+              publish_date: r.publish_date,
+              month_key: r.month_key,
+              order: r.order,
+              is_active: r.is_active,
+            }))
+          )}
+        `;
+      }
+
+      return toUpdate.length + toInsert.length;
+    });
   } catch (e) {
     const msg = (e as Error).message ?? String(e);
     console.error("Import error:", msg);
