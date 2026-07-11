@@ -14,7 +14,7 @@ import { Feather } from "@expo/vector-icons";
 import { LoadingScreen } from "../src/components/LoadingScreen";
 import { DatePickerModal } from "../src/components/DatePickerModal";
 import { ReportModal } from "../src/components/ReportModal";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import type { Example, Post, ReportReason, Word } from "../src/api/client";
@@ -41,6 +41,7 @@ function randomHero() {
 
 export default function HomePage() {
   const date = localDateKey();
+  const insets = useSafeAreaInsets();
   const [heroImg, setHeroImg] = useState(() => randomHero());
 
   const [word, setWord] = useState<Word | null>(null);
@@ -91,16 +92,20 @@ export default function HomePage() {
     const id = word?.id;
     if (!id) { setPosts([]); return; }
     let cancelled = false;
-    (async () => {
-      setPostsLoading(true);
+
+    async function refresh(showLoading: boolean) {
+      if (showLoading) setPostsLoading(true);
       try {
-        const list = await fetchPostsByWordId(id);
+        const list = await fetchPostsByWordId(id as string);
         if (!cancelled) setPosts(list);
       } catch { /* silently fail */ } finally {
-        if (!cancelled) setPostsLoading(false);
+        if (!cancelled && showLoading) setPostsLoading(false);
       }
-    })();
-    return () => { cancelled = true; };
+    }
+
+    refresh(true);
+    const interval = setInterval(() => refresh(false), 15000);
+    return () => { cancelled = true; clearInterval(interval); };
   }, [word?.id]);
 
   const examples: Example[] = word?.examples ?? [];
@@ -260,7 +265,7 @@ export default function HomePage() {
                         placeholderTextColor="#aaa"
                         value={commentText}
                         onChangeText={setCommentText}
-                        maxLength={80}
+                        maxLength={120}
                         editable={!submitting}
                         returnKeyType="send"
                         onSubmitEditing={handleSubmit}
@@ -289,7 +294,7 @@ export default function HomePage() {
                       </Pressable>
                     </View>
                     {commentText.length > 0 && (
-                      <Text style={s.charCount}>{commentText.length}/80</Text>
+                      <Text style={s.charCount}>{commentText.length}/120</Text>
                     )}
                     {formError && <Text style={s.formError}>{formError}</Text>}
                   </View>
@@ -330,7 +335,7 @@ export default function HomePage() {
       </KeyboardAvoidingView>
     </SafeAreaView>
     {toastVisible && (
-      <View style={s.toast} pointerEvents="none">
+      <View style={[s.toast, { bottom: insets.bottom + 32 }]} pointerEvents="none">
         <View style={s.toastPill}>
           <Text style={s.toastText}>Report submitted</Text>
         </View>
@@ -367,7 +372,7 @@ const s = StyleSheet.create({
   header: { paddingTop: 28, paddingHorizontal: 24, paddingBottom: 0, alignItems: "center" },
   title: { fontSize: 15, fontWeight: "700", color: TEXT, letterSpacing: -0.2 },
   dateLabelBtn: { marginTop: 4, paddingVertical: 10, paddingHorizontal: 20 },
-  dateLabel: { fontSize: 13, color: "#aaa" },
+  dateLabel: { fontSize: 13, color: "#aaa", textDecorationLine: "underline" },
   heroImg: { width: "100%", maxWidth: 400, height: 300, marginTop: 0 },
 
   // Loading / error
