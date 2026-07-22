@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BackButton } from "@/components/BackButton";
 
 export const metadata = {
   title: "Terms of Use | Potato on the Subway",
@@ -22,10 +22,13 @@ export default function TermsPage() {
     <div className="min-h-dvh px-5 py-10 bg-[#f0f0ee]">
       <div className="mx-auto w-full max-w-lg">
         <header className="mb-10">
-          <Link href="/" className="text-sm font-semibold uppercase tracking-wider text-stone-900">
-            Potato on the Subway
-          </Link>
-          <p className="text-xs text-stone-400 mt-2">이용약관 · 최종 수정일 2026년 6월 24일</p>
+          <div className="flex items-center gap-1.5">
+            <BackButton />
+            <span className="text-sm font-semibold uppercase tracking-wider text-stone-900">
+              Potato on the Subway
+            </span>
+          </div>
+          <p className="text-xs text-stone-400 mt-2">이용약관 · 최종 수정일 2026년 7월 22일</p>
         </header>
 
         <div className="bg-white border border-stone-200 p-6">
@@ -64,11 +67,18 @@ export default function TermsPage() {
                 이용자는 댓글 옆 신고 아이콘을 통해 부적절한 댓글을 신고할 수 있으며, 신고된 댓글은 즉시 모든
                 이용자에게 비공개로 전환됩니다.
               </li>
+              <li>
+                모바일 앱에서는 서비스가 발급한 익명 식별자를 기준으로, 신고되어 비공개 처리된 댓글이 누적
+                3건 이상인 이용자는 사전 통지 없이 댓글 작성 권한이 영구적으로 제한됩니다.
+              </li>
             </ul>
           </Section>
 
-          <Section title="4. 금지 행위">
-            <p>이용자는 댓글 작성 시 다음 행위를 해서는 안 됩니다.</p>
+          <Section title="4. 금지 행위 및 무관용 원칙">
+            <p>
+              서비스는 부적절한 콘텐츠와 악성 이용자에 대해 무관용(zero-tolerance) 원칙을 적용합니다. 이용자는
+              댓글 작성 시 다음 행위를 해서는 안 됩니다.
+            </p>
             <ul className="list-disc list-outside ml-4 space-y-1">
               <li>스팸, 광고, 도배성 게시물 작성</li>
               <li>욕설, 비방, 혐오 표현 등 타인에게 불쾌감을 주는 게시</li>
@@ -77,7 +87,9 @@ export default function TermsPage() {
               <li>관련 법령을 위반하거나 서비스 운영을 방해하는 행위(자동화된 도배, 시스템 공격 등)</li>
             </ul>
             <p>
-              위 행위가 확인될 경우 사전 통지 없이 해당 댓글을 삭제하거나 서비스 이용을 제한할 수 있습니다.
+              위 행위가 확인될 경우 사전 통지 없이 해당 댓글을 삭제하며, 반복 위반 시 댓글 작성 권한을 영구적으로
+              제한합니다. 부적절한 콘텐츠나 악성 이용자를 발견하신 경우 댓글 옆 신고 아이콘을 이용하시거나
+              아래 9항의 이메일로 알려주시면 신고 접수 후 24시간 이내에 조치합니다.
             </p>
           </Section>
 

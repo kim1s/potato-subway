@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { wordId, content } = body;
+  const { wordId, content, userId } = body;
 
   if (!wordId || !content?.trim()) {
     return NextResponse.json({ error: "wordId와 content가 필요해요." }, { status: 400 });
@@ -29,12 +29,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "댓글은 2000자 이하로 작성해주세요." }, { status: 400 });
   }
 
+  if (userId) {
+    const [banned] = await sql`SELECT 1 FROM banned_users WHERE user_id = ${userId}`;
+    if (banned) {
+      return NextResponse.json({ error: "댓글 작성이 제한되었습니다." }, { status: 403 });
+    }
+  }
+
   const ip = getClientIp(request);
   const ipHash = hashIp(ip);
 
   const [row] = await sql`
-    INSERT INTO posts (word_id, content, ip_hash)
-    VALUES (${wordId}, ${content.trim()}, ${ipHash})
+    INSERT INTO posts (word_id, content, ip_hash, user_id)
+    VALUES (${wordId}, ${content.trim()}, ${ipHash}, ${userId ?? null})
     RETURNING *
   `;
 

@@ -16,7 +16,7 @@ export async function POST(
   const ipHash = hashIp(ip);
 
   const [post] = await sql`
-    UPDATE posts SET is_hidden = true WHERE id = ${id} RETURNING id
+    UPDATE posts SET is_hidden = true WHERE id = ${id} RETURNING id, user_id
   `;
 
   if (!post) {
@@ -28,6 +28,19 @@ export async function POST(
     VALUES (${id}, ${ipHash}, ${reason})
     ON CONFLICT (post_id, ip_hash) DO NOTHING
   `;
+
+  if (post.user_id) {
+    const [{ count }] = await sql`
+      SELECT COUNT(*)::int AS count FROM posts WHERE user_id = ${post.user_id} AND is_hidden = true
+    `;
+    if (count >= 3) {
+      await sql`
+        INSERT INTO banned_users (user_id, report_count)
+        VALUES (${post.user_id}, ${count})
+        ON CONFLICT (user_id) DO UPDATE SET report_count = EXCLUDED.report_count
+      `;
+    }
+  }
 
   return NextResponse.json({ success: true });
 }

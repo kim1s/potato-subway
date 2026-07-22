@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BackButton } from "@/components/BackButton";
 
 export const metadata = {
   title: "Privacy Policy | Potato on the Subway",
@@ -22,10 +22,13 @@ export default function PrivacyPage() {
     <div className="min-h-dvh px-5 py-10 bg-[#f0f0ee]">
       <div className="mx-auto w-full max-w-lg">
         <header className="mb-10">
-          <Link href="/" className="text-sm font-semibold uppercase tracking-wider text-stone-900">
-            Potato on the Subway
-          </Link>
-          <p className="text-xs text-stone-400 mt-2">개인정보처리방침 · 최종 수정일 2026년 6월 24일</p>
+          <div className="flex items-center gap-1.5">
+            <BackButton />
+            <span className="text-sm font-semibold uppercase tracking-wider text-stone-900">
+              Potato on the Subway
+            </span>
+          </div>
+          <p className="text-xs text-stone-400 mt-2">개인정보처리방침 · 최종 수정일 2026년 7월 22일</p>
         </header>
 
         <div className="bg-white border border-stone-200 p-6">
@@ -53,6 +56,12 @@ export default function PrivacyPage() {
                 (스팸/욕설/음란물/기타)와 위 해시 처리된 IP 값이 함께 저장됩니다.
               </li>
               <li>
+                <span className="font-medium text-stone-900">익명 기기 식별자(모바일 앱)</span> — 모바일 앱은
+                실명·연락처 등과 무관한 임의의 문자열 ID를 기기에 생성해 저장합니다. 이 ID는 회원 식별이나
+                광고 목적이 아니라, 반복적으로 신고되는 이용자의 댓글 작성 권한을 제한하는 부정 이용 방지
+                목적으로만 댓글 작성 시 함께 전송·저장됩니다.
+              </li>
+              <li>
                 <span className="font-medium text-stone-900">서비스 이용 통계</span> — 화면 방문, 예문 넘기기,
                 댓글 작성/신고와 같은 기능 사용 여부를 파악하기 위해 Google Analytics(웹), Firebase
                 Analytics·Amplitude(모바일 앱)를 통해 비식별·집계 형태의 이용 통계를 수집합니다. 이 통계는
@@ -68,6 +77,7 @@ export default function PrivacyPage() {
             <ul className="list-disc list-outside ml-4 space-y-1">
               <li>댓글(노트) 기능 제공 및 화면 표시</li>
               <li>스팸·욕설·도배성 댓글 등 악용 방지 및 신고 처리</li>
+              <li>반복 신고된 이용자(모바일 앱)에 대한 댓글 작성 권한 제한</li>
               <li>서비스 오류 확인 및 기능 개선</li>
               <li>익명화된 통계를 통한 서비스 이용 현황 파악</li>
             </ul>
@@ -78,6 +88,7 @@ export default function PrivacyPage() {
               작성된 댓글과 이에 연결된 해시 처리 IP 값은 해당 댓글이 삭제(신고로 인한 비공개 처리 또는 운영자
               삭제)되거나, 댓글이 달린 단어 콘텐츠가 삭제되기 전까지 보관됩니다. 신고된 댓글은 신고 즉시
               모든 이용자에게 보이지 않도록 비공개 처리되며, 이후 운영자가 검토하여 영구 삭제할 수 있습니다.
+              모바일 앱의 익명 기기 식별자는 댓글 작성 권한 제한 처리를 위해 필요한 기간 동안 보관됩니다.
             </p>
           </Section>
 
