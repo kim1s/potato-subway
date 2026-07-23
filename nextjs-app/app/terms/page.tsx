@@ -1,5 +1,3 @@
-import { BackButton } from "@/components/BackButton";
-
 export const metadata = {
   title: "Terms of Use | Potato on the Subway",
 };
@@ -22,12 +20,9 @@ export default function TermsPage() {
     <div className="min-h-dvh px-5 py-10 bg-[#f0f0ee]">
       <div className="mx-auto w-full max-w-lg">
         <header className="mb-10">
-          <div className="flex items-center gap-1.5">
-            <BackButton />
-            <span className="text-sm font-semibold uppercase tracking-wider text-stone-900">
-              Potato on the Subway
-            </span>
-          </div>
+          <span className="text-sm font-semibold uppercase tracking-wider text-stone-900">
+            Potato on the Subway
+          </span>
           <p className="text-xs text-stone-400 mt-2">이용약관 · 최종 수정일 2026년 7월 22일</p>
         </header>
 
