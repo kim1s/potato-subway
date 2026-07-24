@@ -49,12 +49,17 @@ export async function fetchAvailableDatesForMonth(monthKey: string): Promise<str
   }
 }
 
-export function createPost(wordId: string, content: string): Promise<Post> {
+export function createPost(wordId: string, content: string, userId: string): Promise<Post> {
   return request("/api/posts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ wordId, content }),
+    body: JSON.stringify({ wordId, content, userId }),
   });
+}
+
+export async function fetchUserBanStatus(userId: string): Promise<boolean> {
+  const data = await request<{ banned: boolean }>(`/api/users/${userId}/status`);
+  return data.banned;
 }
 
 export type ReportReason = "spam" | "abuse" | "sexual" | "other";

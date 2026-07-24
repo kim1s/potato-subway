@@ -18,7 +18,8 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import type { Example, Post, ReportReason, Word } from "../src/api/client";
-import { createPost, fetchPostsByWordId, fetchWordByDate, reportPost } from "../src/api/client";
+import { createPost, fetchPostsByWordId, fetchUserBanStatus, fetchWordByDate, reportPost } from "../src/api/client";
+import { getDeviceId } from "../src/deviceId";
 import { formatCommentTime, formatHeaderDate, localDateKey } from "../src/utils/date";
 import { logCommentFocus, logCommentSubmit, logCommentReport, logExampleSwipe, logCalendarDateSelect } from "../src/analytics";
 
@@ -59,6 +60,8 @@ export default function HomePage() {
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [reportTarget, setReportTarget] = useState<Post | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [banned, setBanned] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
   const noteInputRef = useRef<TextInput>(null);
@@ -78,6 +81,13 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    getDeviceId().then((id) => {
+      setUserId(id);
+      fetchUserBanStatus(id).then(setBanned).catch(() => {});
+    });
   }, []);
 
   useEffect(() => { load(date); }, [date, load]);
@@ -138,18 +148,20 @@ export default function HomePage() {
   }
 
   async function handleSubmit() {
-    if (!word || !commentText.trim()) return;
+    if (!word || !commentText.trim() || !userId || banned) return;
     setSubmitting(true);
     setFormError(null);
     try {
-      const post = await createPost(word.id, commentText.trim());
+      const post = await createPost(word.id, commentText.trim(), userId);
       setPosts((prev) => [post, ...prev]);
       setCommentText("");
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 2000);
       logCommentSubmit(word.word);
     } catch (e: unknown) {
-      setFormError((e as Error).message ?? "Failed to post");
+      const err = e as { status?: number; message?: string };
+      if (err.status === 403) setBanned(true);
+      setFormError(err.message ?? "Failed to post");
     } finally {
       setSubmitting(false);
     }
@@ -257,46 +269,54 @@ export default function HomePage() {
                     onLayout={(e) => { noteSectionOffsetY.current = e.nativeEvent.layout.y; }}
                   >
                     <Text style={s.sectionLabel}>Leave a note</Text>
-                    <View style={s.noteRow}>
-                      <TextInput
-                        ref={noteInputRef}
-                        style={s.noteInput}
-                        placeholder="Try today's word"
-                        placeholderTextColor="#aaa"
-                        value={commentText}
-                        onChangeText={setCommentText}
-                        maxLength={120}
-                        editable={!submitting}
-                        returnKeyType="send"
-                        onSubmitEditing={handleSubmit}
-                        autoCorrect={false}
-                        multiline
-                        scrollEnabled={false}
-                        onFocus={() => {
-                          logCommentFocus();
-                          setTimeout(() => {
-                            flatListRef.current?.scrollToOffset({
-                              offset: noteSectionOffsetY.current - 16,
-                              animated: true,
-                            });
-                          }, 300);
-                        }}
-                      />
-                      <Pressable
-                        style={[s.noteSubmit, submitted && s.noteSubmitDropped, (!commentText.trim() || submitting) && s.noteSubmitDisabled]}
-                        onPress={handleSubmit}
-                        disabled={!commentText.trim() || submitting}
-                      >
-                        {submitting
-                          ? <ActivityIndicator size="small" color="#fff" />
-                          : <Text style={s.noteSubmitText}>{submitted ? "Dropped ✓" : "Drop It"}</Text>
-                        }
-                      </Pressable>
-                    </View>
-                    {commentText.length > 0 && (
-                      <Text style={s.charCount}>{commentText.length}/120</Text>
+                    {banned ? (
+                      <View style={s.card}>
+                        <Text style={s.formError}>댓글 작성이 제한되었습니다.</Text>
+                      </View>
+                    ) : (
+                      <>
+                        <View style={s.noteRow}>
+                          <TextInput
+                            ref={noteInputRef}
+                            style={s.noteInput}
+                            placeholder="Try today's word"
+                            placeholderTextColor="#aaa"
+                            value={commentText}
+                            onChangeText={setCommentText}
+                            maxLength={120}
+                            editable={!submitting}
+                            returnKeyType="send"
+                            onSubmitEditing={handleSubmit}
+                            autoCorrect={false}
+                            multiline
+                            scrollEnabled={false}
+                            onFocus={() => {
+                              logCommentFocus();
+                              setTimeout(() => {
+                                flatListRef.current?.scrollToOffset({
+                                  offset: noteSectionOffsetY.current - 16,
+                                  animated: true,
+                                });
+                              }, 300);
+                            }}
+                          />
+                          <Pressable
+                            style={[s.noteSubmit, submitted && s.noteSubmitDropped, (!commentText.trim() || submitting) && s.noteSubmitDisabled]}
+                            onPress={handleSubmit}
+                            disabled={!commentText.trim() || submitting}
+                          >
+                            {submitting
+                              ? <ActivityIndicator size="small" color="#fff" />
+                              : <Text style={s.noteSubmitText}>{submitted ? "Dropped ✓" : "Drop It"}</Text>
+                            }
+                          </Pressable>
+                        </View>
+                        {commentText.length > 0 && (
+                          <Text style={s.charCount}>{commentText.length}/120</Text>
+                        )}
+                        {formError && <Text style={s.formError}>{formError}</Text>}
+                      </>
                     )}
-                    {formError && <Text style={s.formError}>{formError}</Text>}
                   </View>
 
                   {/* Comments section label */}
