@@ -34,6 +34,17 @@ export async function POST(request: NextRequest) {
     if (banned) {
       return NextResponse.json({ error: "댓글 작성이 제한되었습니다." }, { status: 403 });
     }
+
+    const [{ count }] = await sql`
+      SELECT COUNT(*)::int AS count FROM posts
+      WHERE user_id = ${userId} AND created_at >= date_trunc('day', now())
+    `;
+    if (count >= 10) {
+      return NextResponse.json(
+        { error: "하루에 작성할 수 있는 댓글은 10개까지예요." },
+        { status: 429 }
+      );
+    }
   }
 
   const ip = getClientIp(request);

@@ -5,7 +5,7 @@ export const metadata = {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-8">
-      <h2 className="text-[0.5625rem] font-semibold uppercase tracking-widest text-stone-400 mb-3">
+      <h2 className="text-sm font-semibold uppercase tracking-widest text-stone-400 mb-3">
         {title}
       </h2>
       <div className="space-y-3 text-sm leading-relaxed text-stone-700">
@@ -23,7 +23,7 @@ export default function TermsPage() {
           <span className="text-sm font-semibold uppercase tracking-wider text-stone-900">
             Potato on the Subway
           </span>
-          <p className="text-xs text-stone-400 mt-2">이용약관 · 최종 수정일 2026년 7월 22일</p>
+          <p className="text-xs text-stone-400 mt-2">이용약관 · 최종 수정일 2026년 7월 25일</p>
         </header>
 
         <div className="bg-white border border-stone-200 p-6">
@@ -45,7 +45,7 @@ export default function TermsPage() {
             <ul className="list-disc list-outside ml-4 space-y-1">
               <li>서비스는 별도의 가입 절차 없이 누구나 무료로 이용할 수 있습니다.</li>
               <li>
-                서비스는 만 14세 이상 이용을 권장하며, 만 14세 미만 이용자는 보호자의 지도 아래 이용해 주세요.
+                서비스는 만 18세 이상 이용을 권장하며, 만 18세 미만 이용자는 보호자의 지도 아래 이용해 주세요.
               </li>
               <li>운영자는 서비스 내용을 사전 고지 없이 변경하거나 중단할 수 있습니다.</li>
             </ul>
@@ -65,6 +65,9 @@ export default function TermsPage() {
               <li>
                 모바일 앱에서는 서비스가 발급한 익명 식별자를 기준으로, 신고되어 비공개 처리된 댓글이 누적
                 3건 이상인 이용자는 사전 통지 없이 댓글 작성 권한이 영구적으로 제한됩니다.
+              </li>
+              <li>
+                도배 방지를 위해 하나의 익명 식별자가 하루에 작성할 수 있는 댓글은 최대 10개로 제한됩니다.
               </li>
             </ul>
           </Section>

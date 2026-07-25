@@ -5,7 +5,7 @@ export const metadata = {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-8">
-      <h2 className="text-[0.5625rem] font-semibold uppercase tracking-widest text-stone-400 mb-3">
+      <h2 className="text-sm font-semibold uppercase tracking-widest text-stone-400 mb-3">
         {title}
       </h2>
       <div className="space-y-3 text-sm leading-relaxed text-stone-700">

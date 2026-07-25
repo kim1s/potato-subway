@@ -20,19 +20,28 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://potato-subway-d7499jh43-khs971013-2038s-projects.vercel.app"
+        "EXPO_PUBLIC_API_BASE_URL": "https://potato-subway.vercel.app"
       }
     },
     "production": {
       "android": {
+        "credentialsSource": "local",
         "buildType": "app-bundle"
       },
+      "ios": {
+        "credentialsSource": "remote",
+        "autoIncrement": true
+      },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://potato-subway-d7499jh43-khs971013-2038s-projects.vercel.app"
+        "EXPO_PUBLIC_API_BASE_URL": "https://potato-subway.vercel.app"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6790770121"
+      }
+    }
   }
 }
