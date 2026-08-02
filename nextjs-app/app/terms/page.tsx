@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Terms of Use | Potato on the Subway",
+  title: "Terms of Use | Potato Subway",
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -21,14 +21,14 @@ export default function TermsPage() {
       <div className="mx-auto w-full max-w-lg">
         <header className="mb-10">
           <span className="text-sm font-semibold uppercase tracking-wider text-stone-900">
-            Potato on the Subway
+            Potato Subway
           </span>
           <p className="text-xs text-stone-400 mt-2">이용약관 · 최종 수정일 2026년 7월 25일</p>
         </header>
 
         <div className="bg-white border border-stone-200 p-6">
           <p className="text-sm leading-relaxed text-stone-700 mb-8">
-            본 약관은 &ldquo;Potato on the Subway&rdquo;(이하 &ldquo;서비스&rdquo;)의 웹사이트 및 모바일
+            본 약관은 &ldquo;Potato Subway&rdquo;(이하 &ldquo;서비스&rdquo;)의 웹사이트 및 모바일
             앱 이용과 관련하여 운영자와 이용자 간의 권리, 의무 및 책임 사항을 정합니다. 서비스를 이용함으로써
             본 약관에 동의한 것으로 간주됩니다.
           </p>

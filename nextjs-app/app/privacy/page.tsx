@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Privacy Policy | Potato on the Subway",
+  title: "Privacy Policy | Potato Subway",
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -21,14 +21,14 @@ export default function PrivacyPage() {
       <div className="mx-auto w-full max-w-lg">
         <header className="mb-10">
           <span className="text-sm font-semibold uppercase tracking-wider text-stone-900">
-            Potato on the Subway
+            Potato Subway
           </span>
           <p className="text-xs text-stone-400 mt-2">개인정보처리방침 · 최종 수정일 2026년 7월 22일</p>
         </header>
 
         <div className="bg-white border border-stone-200 p-6">
           <p className="text-sm leading-relaxed text-stone-700 mb-8">
-            &ldquo;Potato on the Subway&rdquo;(이하 &ldquo;서비스&rdquo;)는 이용자의 개인정보를 소중히 여기며,
+            &ldquo;Potato Subway&rdquo;(이하 &ldquo;서비스&rdquo;)는 이용자의 개인정보를 소중히 여기며,
             아래와 같이 최소한의 정보만을 수집·이용합니다. 서비스는 별도의 회원가입 없이 누구나 이용할 수
             있으며, 이름·이메일 등 개인을 특정할 수 있는 정보를 수집하지 않습니다.
           </p>
@@ -82,8 +82,14 @@ export default function PrivacyPage() {
             <p>
               작성된 댓글과 이에 연결된 해시 처리 IP 값은 해당 댓글이 삭제(신고로 인한 비공개 처리 또는 운영자
               삭제)되거나, 댓글이 달린 단어 콘텐츠가 삭제되기 전까지 보관됩니다. 신고된 댓글은 신고 즉시
-              모든 이용자에게 보이지 않도록 비공개 처리되며, 이후 운영자가 검토하여 영구 삭제할 수 있습니다.
-              모바일 앱의 익명 기기 식별자는 댓글 작성 권한 제한 처리를 위해 필요한 기간 동안 보관됩니다.
+              모든 이용자에게 보이지 않도록 비공개 처리되며, 비공개 처리일로부터 최대 90일 이내에 운영자가
+              검토하여 영구 삭제합니다. 이용자가 6번 항목의 절차에 따라 댓글 삭제를 요청한 경우, 요청을
+              확인한 날로부터 7일 이내에 해당 댓글과 연결된 해시 처리 IP 값을 함께 파기합니다.
+            </p>
+            <p>
+              모바일 앱의 익명 기기 식별자는 댓글 작성 권한 제한(반복 신고 이용자 차단) 처리를 위해 필요한
+              기간 동안 기기에 보관되며, 이용자가 앱을 삭제하거나 앱 데이터를 초기화하면 해당 식별자도 함께
+              삭제되어 서버에서도 더 이상 특정 기기로 연결되지 않습니다.
             </p>
           </Section>
 
@@ -116,6 +122,12 @@ export default function PrivacyPage() {
               부적절한 댓글을 발견한 경우 댓글 옆 신고(🚩) 아이콘을 눌러 누구나 즉시 비공개 처리를 요청할 수
               있습니다.
             </p>
+            <p>
+              모바일 앱은 별도의 회원가입 없이 기기에 익명 식별자를 생성해 이용하므로, 이 식별자를 삭제하고
+              싶은 경우 별도 요청 없이 앱을 삭제하거나 앱 설정에서 앱 데이터를 초기화하면 즉시 삭제되며,
+              재설치 시 새로운 식별자가 발급됩니다. 서버에 저장된 기존 식별자 관련 기록의 삭제를 원하실
+              경우에도 9번 항목의 이메일로 요청해 주시면 확인 후 삭제해 드립니다.
+            </p>
           </Section>
 
           <Section title="7. 만 14세 미만 아동의 개인정보">
@@ -142,6 +154,8 @@ export default function PrivacyPage() {
             </p>
           </Section>
         </div>
+
+        <p className="text-xs text-stone-400 mt-6">개발자: studio.doosle</p>
       </div>
     </div>
   );
