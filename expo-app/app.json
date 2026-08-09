@@ -2,14 +2,19 @@
   "expo": {
     "name": "Potato on the Subway",
     "slug": "subway-potato",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "potato-subway",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.potatosubway.app"
+      "bundleIdentifier": "com.potatosubway.app",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "buildNumber": "5"
     },
     "android": {
       "icon": "./assets/icon.png",
@@ -17,7 +22,7 @@
       "package": "com.potatosubway.app",
       "googleServicesFile": "./google-services.json",
       "softwareKeyboardLayoutMode": "pan",
-      "versionCode": 4
+      "versionCode": 10
     },
     "web": {
       "bundler": "metro",
@@ -26,7 +31,16 @@
     "plugins": [
       "expo-router",
       "expo-system-ui",
-      "@react-native-firebase/app"
+      "@react-native-firebase/app",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

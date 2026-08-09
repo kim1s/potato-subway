@@ -4,6 +4,7 @@ import { hashIp, getClientIp } from "@/lib/ipHash";
 
 export async function GET(request: NextRequest) {
   const wordId = request.nextUrl.searchParams.get("wordId");
+  const viewerId = request.nextUrl.searchParams.get("viewerId");
   if (!wordId) {
     return NextResponse.json({ error: "wordId 파라미터가 필요해요." }, { status: 400 });
   }
@@ -12,6 +13,13 @@ export async function GET(request: NextRequest) {
     SELECT id, word_id, content, likes, created_at
     FROM posts
     WHERE word_id = ${wordId} AND is_hidden = false
+      AND (
+        ${viewerId}::text IS NULL
+        OR user_id IS NULL
+        OR user_id NOT IN (
+          SELECT blocked_user_id FROM blocked_users WHERE blocker_user_id = ${viewerId}
+        )
+      )
     ORDER BY created_at DESC
   `;
 

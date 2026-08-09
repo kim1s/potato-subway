@@ -1,0 +1,21 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "expo-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "web"],
+      "cwd": "expo-app",
+      "port": 8081,
+      "autoPort": true
+    },
+    {
+      "name": "nextjs-app",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "nextjs-app",
+      "port": 3000,
+      "autoPort": true
+    }
+  ]
+}

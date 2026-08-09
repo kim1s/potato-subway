@@ -53,3 +53,8 @@ export async function logCalendarDateSelect(date: string) {
 export async function logCommentReport(word: string) {
   logEvent("comment_report", { word });
 }
+
+/** 사용자 차단 */
+export async function logUserBlock(word: string) {
+  logEvent("user_block", { word });
+}

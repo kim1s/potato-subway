@@ -3,6 +3,7 @@ import {
   FlatList,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   StyleSheet,
@@ -10,17 +11,24 @@ import {
   TextInput,
   View,
 } from "react-native";
+import * as WebBrowser from "expo-web-browser";
 import { Feather } from "@expo/vector-icons";
 import { LoadingScreen } from "../src/components/LoadingScreen";
 import { DatePickerModal } from "../src/components/DatePickerModal";
 import { ReportModal } from "../src/components/ReportModal";
+import { BlockConfirmModal } from "../src/components/BlockConfirmModal";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import type { Example, Post, ReportReason, Word } from "../src/api/client";
-import { createPost, fetchPostsByWordId, fetchWordByDate, reportPost } from "../src/api/client";
+import { blockPostAuthor, createPost, fetchPostsByWordId, fetchUserStatus, fetchWordByDate, reportPost } from "../src/api/client";
 import { formatCommentTime, formatHeaderDate, localDateKey } from "../src/utils/date";
-import { logCommentFocus, logCommentSubmit, logCommentReport, logExampleSwipe, logCalendarDateSelect } from "../src/analytics";
+import { logCommentFocus, logCommentSubmit, logCommentReport, logUserBlock, logExampleSwipe, logCalendarDateSelect } from "../src/analytics";
+import { getOrCreateUserId } from "../src/anonUser";
+
+const CONTACT_EMAIL = "studio.doosle@gmail.com";
+const TERMS_URL = "https://potato-subway.vercel.app/terms";
+const PRIVACY_URL = "https://potato-subway.vercel.app/privacy";
 
 function displayWord(w: string) {
   return w ? w.charAt(0).toUpperCase() + w.slice(1) : "";
@@ -58,11 +66,23 @@ export default function HomePage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
   const [reportTarget, setReportTarget] = useState<Post | null>(null);
+  const [blockTarget, setBlockTarget] = useState<Post | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [banned, setBanned] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
   const noteInputRef = useRef<TextInput>(null);
   const noteSectionOffsetY = useRef<number>(0);
+
+  useEffect(() => {
+    getOrCreateUserId().then(async (id) => {
+      setUserId(id);
+      const status = await fetchUserStatus(id);
+      setBanned(status.banned);
+    });
+  }, []);
 
   const load = useCallback(async (publishDate: string) => {
     setLoading(true);
@@ -96,7 +116,7 @@ export default function HomePage() {
     async function refresh(showLoading: boolean) {
       if (showLoading) setPostsLoading(true);
       try {
-        const list = await fetchPostsByWordId(id as string);
+        const list = await fetchPostsByWordId(id as string, userId);
         if (!cancelled) setPosts(list);
       } catch { /* silently fail */ } finally {
         if (!cancelled && showLoading) setPostsLoading(false);
@@ -106,7 +126,7 @@ export default function HomePage() {
     refresh(true);
     const interval = setInterval(() => refresh(false), 15000);
     return () => { cancelled = true; clearInterval(interval); };
-  }, [word?.id]);
+  }, [word?.id, userId]);
 
   const examples: Example[] = word?.examples ?? [];
   const currentExample = examples[exampleIndex] ?? null;
@@ -124,32 +144,55 @@ export default function HomePage() {
     }
   });
 
+  function showToast(message: string) {
+    setToastMessage(message);
+    setToastVisible(true);
+    setTimeout(() => setToastVisible(false), 3000);
+  }
+
   async function handleReportSubmit(reason: ReportReason) {
     const post = reportTarget;
     if (!post) return;
     setReportTarget(null);
     setPosts((prev) => prev.filter((p) => p.id !== post.id));
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 3000);
+    showToast("Report submitted");
     try {
       await reportPost(post.id, reason);
       if (word) logCommentReport(word.word);
     } catch { /* already removed locally, ignore */ }
   }
 
+  async function handleBlockConfirm() {
+    const post = blockTarget;
+    if (!post || !userId) return;
+    setBlockTarget(null);
+    setPosts((prev) => prev.filter((p) => p.id !== post.id));
+    try {
+      await blockPostAuthor(post.id, userId);
+      if (word) logUserBlock(word.word);
+      showToast("사용자를 차단했어요");
+    } catch (e: unknown) {
+      setPosts((prev) => [...prev, post]);
+      const err = e as { message?: string };
+      showToast(err.message ?? "차단에 실패했어요");
+    }
+  }
+
   async function handleSubmit() {
-    if (!word || !commentText.trim()) return;
+    if (!word || !commentText.trim() || !userId) return;
     setSubmitting(true);
     setFormError(null);
     try {
-      const post = await createPost(word.id, commentText.trim());
+      const post = await createPost(word.id, commentText.trim(), userId);
       setPosts((prev) => [post, ...prev]);
       setCommentText("");
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 2000);
       logCommentSubmit(word.word);
     } catch (e: unknown) {
-      setFormError((e as Error).message ?? "Failed to post");
+      const err = e as { status?: number; message?: string };
+      if (err.status === 403) setBanned(true);
+      setFormError(err.message ?? "Failed to post");
     } finally {
       setSubmitting(false);
     }
@@ -257,6 +300,14 @@ export default function HomePage() {
                     onLayout={(e) => { noteSectionOffsetY.current = e.nativeEvent.layout.y; }}
                   >
                     <Text style={s.sectionLabel}>Leave a note</Text>
+                    {banned ? (
+                      <View style={s.bannedBox}>
+                        <Text style={s.bannedText}>
+                          반복 신고로 인해 댓글 작성이 제한되었습니다.{"\n"}문의: {CONTACT_EMAIL}
+                        </Text>
+                      </View>
+                    ) : (
+                    <>
                     <View style={s.noteRow}>
                       <TextInput
                         ref={noteInputRef}
@@ -272,6 +323,7 @@ export default function HomePage() {
                         autoCorrect={false}
                         multiline
                         scrollEnabled={false}
+                        {...(Platform.OS === "web" ? ({ rows: 1 } as object) : {})}
                         onFocus={() => {
                           logCommentFocus();
                           setTimeout(() => {
@@ -283,9 +335,9 @@ export default function HomePage() {
                         }}
                       />
                       <Pressable
-                        style={[s.noteSubmit, submitted && s.noteSubmitDropped, (!commentText.trim() || submitting) && s.noteSubmitDisabled]}
+                        style={[s.noteSubmit, submitted && s.noteSubmitDropped, (!commentText.trim() || submitting || !userId) && s.noteSubmitDisabled]}
                         onPress={handleSubmit}
-                        disabled={!commentText.trim() || submitting}
+                        disabled={!commentText.trim() || submitting || !userId}
                       >
                         {submitting
                           ? <ActivityIndicator size="small" color="#fff" />
@@ -297,6 +349,8 @@ export default function HomePage() {
                       <Text style={s.charCount}>{commentText.length}/120</Text>
                     )}
                     {formError && <Text style={s.formError}>{formError}</Text>}
+                    </>
+                    )}
                   </View>
 
                   {/* Comments section label */}
@@ -320,6 +374,9 @@ export default function HomePage() {
               <Text style={s.commentText}>{item.content}</Text>
               <View style={s.commentMeta}>
                 <Text style={s.commentTime}>{formatCommentTime(item.created_at)}</Text>
+                <Pressable onPress={() => setBlockTarget(item)} hitSlop={8}>
+                  <Feather name="slash" size={13} color={LIGHT} />
+                </Pressable>
                 <Pressable onPress={() => setReportTarget(item)} hitSlop={8}>
                   <Feather name="flag" size={13} color={LIGHT} />
                 </Pressable>
@@ -329,6 +386,18 @@ export default function HomePage() {
           ListFooterComponent={
             <View style={s.footer}>
               <Text style={s.footerText}>Potato on the Subway · Every weekday morning</Text>
+              <View style={s.footerLinks}>
+                <Pressable onPress={() => WebBrowser.openBrowserAsync(TERMS_URL)}>
+                  <Text style={s.footerLinkText}>이용약관</Text>
+                </Pressable>
+                <Text style={s.footerLinkDivider}>·</Text>
+                <Pressable onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)}>
+                  <Text style={s.footerLinkText}>개인정보처리방침</Text>
+                </Pressable>
+              </View>
+              <Pressable onPress={() => Linking.openURL(`mailto:${CONTACT_EMAIL}`)}>
+                <Text style={s.footerReportText}>부적절한 콘텐츠 신고: {CONTACT_EMAIL}</Text>
+              </Pressable>
             </View>
           }
         />
@@ -337,7 +406,7 @@ export default function HomePage() {
     {toastVisible && (
       <View style={[s.toast, { bottom: insets.bottom + 32 }]} pointerEvents="none">
         <View style={s.toastPill}>
-          <Text style={s.toastText}>Report submitted</Text>
+          <Text style={s.toastText}>{toastMessage}</Text>
         </View>
       </View>
     )}
@@ -352,6 +421,11 @@ export default function HomePage() {
       visible={!!reportTarget}
       onClose={() => setReportTarget(null)}
       onSubmit={handleReportSubmit}
+    />
+    <BlockConfirmModal
+      visible={!!blockTarget}
+      onClose={() => setBlockTarget(null)}
+      onConfirm={handleBlockConfirm}
     />
     </>
   );
@@ -414,6 +488,8 @@ const s = StyleSheet.create({
   noteSubmitText: { color: "#fff", fontWeight: "600", fontSize: 13 },
   charCount: { fontSize: 11, color: LIGHT, textAlign: "right", marginTop: 4 },
   formError: { fontSize: 12, color: "#c00", marginTop: 6 },
+  bannedBox: { backgroundColor: CARD, borderWidth: 1, borderColor: BORDER, borderRadius: 4, padding: 14 },
+  bannedText: { fontSize: 12, color: "#c00", lineHeight: 18 },
 
   // Comments
   commentsCard: { marginHorizontal: 20, backgroundColor: CARD, borderRadius: 4, borderWidth: 1, borderColor: BORDER, overflow: "hidden" },
@@ -426,6 +502,10 @@ const s = StyleSheet.create({
 
   // Footer
   footer: { marginTop: 40, paddingVertical: 24, paddingHorizontal: 20, alignItems: "center", borderTopWidth: 1, borderTopColor: BORDER },
+  footerLinks: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 20 },
+  footerLinkText: { fontSize: 11, color: "#999", textDecorationLine: "underline" },
+  footerLinkDivider: { fontSize: 11, color: "#ccc" },
+  footerReportText: { fontSize: 11, color: "#999", textDecorationLine: "underline", marginTop: 10 },
 
   // Toast
   toast: { position: "absolute", bottom: 32, left: 24, right: 24, alignItems: "center" },

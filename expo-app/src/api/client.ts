@@ -35,8 +35,9 @@ export function fetchWordByDate(date: string): Promise<Word> {
   return request(`/api/contents/daily?date=${date}`);
 }
 
-export async function fetchPostsByWordId(wordId: string): Promise<Post[]> {
-  const data = await request<{ posts: Post[] }>(`/api/posts?wordId=${wordId}`);
+export async function fetchPostsByWordId(wordId: string, viewerId?: string | null): Promise<Post[]> {
+  const query = viewerId ? `&viewerId=${encodeURIComponent(viewerId)}` : "";
+  const data = await request<{ posts: Post[] }>(`/api/posts?wordId=${wordId}${query}`);
   return data.posts ?? [];
 }
 
@@ -49,12 +50,20 @@ export async function fetchAvailableDatesForMonth(monthKey: string): Promise<str
   }
 }
 
-export function createPost(wordId: string, content: string): Promise<Post> {
+export function createPost(wordId: string, content: string, userId: string): Promise<Post> {
   return request("/api/posts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ wordId, content }),
+    body: JSON.stringify({ wordId, content, userId }),
   });
+}
+
+export async function fetchUserStatus(userId: string): Promise<{ banned: boolean }> {
+  try {
+    return await request(`/api/users/${userId}/status`);
+  } catch {
+    return { banned: false };
+  }
 }
 
 export type ReportReason = "spam" | "abuse" | "sexual" | "other";
@@ -64,5 +73,13 @@ export async function reportPost(postId: string, reason: ReportReason): Promise<
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ reason }),
+  });
+}
+
+export async function blockPostAuthor(postId: string, blockerId: string): Promise<void> {
+  await request(`/api/posts/${postId}/block`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ blockerId }),
   });
 }
