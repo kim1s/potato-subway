@@ -59,7 +59,7 @@ export function LoadingScreen({ visible }: { visible: boolean }) {
       const t = setTimeout(() => {
         Animated.timing(fadeOut, { toValue: 0, duration: 700, useNativeDriver: true })
           .start(() => setHidden(true));
-      }, 1300);
+      }, 300);
       return () => clearTimeout(t);
     }
   }, [visible]);
