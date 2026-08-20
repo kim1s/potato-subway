@@ -2,6 +2,7 @@ const NOTION_API = "https://api.notion.com/v1";
 const NOTION_VERSION = "2022-06-28";
 
 export interface NotionRow {
+  notionPageId: string;
   publishDate: string;
   monthKey: string;
   word: string;
@@ -103,7 +104,7 @@ export async function fetchNotionRows(notionUrl: string, notionToken: string): P
       if (en && ko) examples.push({ en, ko });
     }
 
-    items.push({ publishDate, monthKey, word, meaning: { ko: wordKo, en: word }, examples, isActive: true });
+    items.push({ notionPageId: page.id, publishDate, monthKey, word, meaning: { ko: wordKo, en: word }, examples, isActive: true });
   }
   return items;
 }
